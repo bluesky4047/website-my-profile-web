@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Timeline Countdown</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+
+      header {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        margin-bottom: 30px;
+      }
+
+      h1 {
+        color: #667eea;
+        margin-bottom: 20px;
+        font-size: 2em;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+      }
+
+      .global-shift {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-top: 15px;
+      }
+
+      .global-shift label {
+        font-weight: bold;
+        color: #555;
+      }
+
+      button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .btn-primary {
+        background: #667eea;
+        color: white;
+      }
+
+      .btn-success {
+        background: #48bb78;
+        color: white;
+      }
+
+      .btn-warning {
+        background: #ed8936;
+        color: white;
+      }
+
+      .btn-danger {
+        background: #f56565;
+        color: white;
+      }
+
+      .btn-secondary {
+        background: #718096;
+        color: white;
+      }
+
+      input[type="number"],
+      input[type="text"],
+      input[type="datetime-local"],
+      textarea {
+        padding: 10px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border 0.3s;
+      }
+
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .timeline {
+        position: relative;
+        padding-left: 40px;
+      }
+
+      .timeline::before {
+        content: "";
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .event-card {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 25px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        position: relative;
+        transition: all 0.3s;
+      }
+
+      .event-card::before {
+        content: "";
+        position: absolute;
+        left: -29px;
+        top: 30px;
+        width: 15px;
+        height: 15px;
+        background: #667eea;
+        border-radius: 50%;
+        border: 3px solid white;
+      }
+
+      .event-card.past {
+        opacity: 0.6;
+        background: #f7fafc;
+      }
+
+      .event-card.past::before {
+        background: #a0aec0;
+      }
+
+      .event-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 15px;
+        gap: 15px;
+      }
+
+      .event-title {
+        font-size: 1.5em;
+        color: #2d3748;
+        font-weight: bold;
+        flex: 1;
+      }
+
+      .event-date {
+        color: #718096;
+        font-size: 0.9em;
+        margin-bottom: 10px;
+      }
+
+      .countdown {
+        font-size: 2em;
+        font-weight: bold;
+        color: #667eea;
+        margin: 15px 0;
+        font-family: "Courier New", monospace;
+      }
+
+      .countdown.expired {
+        color: #f56565;
+      }
+
+      .event-description {
+        color: #4a5568;
+        margin-bottom: 15px;
+        line-height: 1.6;
+      }
+
+      .event-controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #e2e8f0;
+      }
+
+      .shift-controls {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .shift-controls input {
+        width: 80px;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      .modal.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        max-width: 500px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+
+      .modal-content h2 {
+        margin-bottom: 20px;
+        color: #2d3748;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #4a5568;
+      }
+
+      .form-group input,
+      .form-group textarea {
+        width: 100%;
+      }
+
+      .form-group textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+
+      .modal-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: white;
+      }
+
+      .empty-state h2 {
+        font-size: 2em;
+        margin-bottom: 10px;
+      }
+
+      /* Timeline Bar */
+      .timeline-bar {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        margin-bottom: 30px;
+        overflow: hidden;
+      }
+
+      .timeline-bar h2 {
+        color: #2d3748;
+        margin-bottom: 15px;
+        font-size: 1.3em;
+      }
+
+      .timeline-bar-container {
+        position: relative;
+        height: 80px;
+        background: #f7fafc;
+        border-radius: 10px;
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+
+      .timeline-bar-scroll {
+        position: relative;
+        height: 100%;
+        min-width: 100%;
+        display: flex;
+        align-items: center;
+      }
+
+      .timeline-today-marker {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: #f56565;
+        z-index: 10;
+        transform: translateX(-50%);
+      }
+
+      .timeline-today-marker::before {
+        content: "HARI INI";
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #f56565;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: bold;
+        white-space: nowrap;
+      }
+
+      .timeline-event-marker {
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #667eea;
+        border: 3px solid white;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 12px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      .timeline-event-marker:hover {
+        transform: translate(-50%, -50%) scale(1.2);
+        z-index: 5;
+      }
+
+      .timeline-event-marker.past {
+        background: #a0aec0;
+      }
+
+      .timeline-event-marker.today {
+        background: #f56565;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          box-shadow: 0 3px 10px rgba(245, 101, 101, 0.4);
+        }
+        50% {
+          box-shadow: 0 3px 20px rgba(245, 101, 101, 0.8);
+        }
+      }
+
+      .timeline-event-tooltip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #2d3748;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        white-space: nowrap;
+        margin-bottom: 10px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+        z-index: 20;
+      }
+
+      .timeline-event-tooltip::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: #2d3748;
+      }
+
+      .timeline-event-marker:hover .timeline-event-tooltip {
+        opacity: 1;
+      }
+
+      .timeline-bar-legend {
+        display: flex;
+        gap: 15px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+        font-size: 0.9em;
+      }
+
+      .timeline-bar-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .timeline-bar-legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+
+      .timeline-bar-legend-dot.today {
+        background: #f56565;
+      }
+
+      .timeline-bar-legend-dot.upcoming {
+        background: #667eea;
+      }
+
+      .timeline-bar-legend-dot.past {
+        background: #a0aec0;
+      }
+
+      @media (max-width: 600px) {
+        h1 {
+          font-size: 1.5em;
+        }
+
+        .event-header {
+          flex-direction: column;
+        }
+
+        .countdown {
+          font-size: 1.5em;
+        }
+
+        .controls,
+        .global-shift,
+        .event-controls,
+        .shift-controls {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        button {
+          width: 100%;
+        }
+
+        .timeline-bar-container {
+          height: 60px;
+        }
+
+        .timeline-event-marker {
+          width: 30px;
+          height: 30px;
+          font-size: 10px;
+        }
+      }
+
+      .notification-badge {
+        display: inline-block;
+        background: #f56565;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        margin-left: 10px;
+      }
+
+      @keyframes highlight {
+        0%,
+        100% {
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        50% {
+          box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+          transform: scale(1.02);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>⏰ Timeline Countdown</h1>
+
+        <div class="controls">
+          <button class="btn-primary" onclick="openAddModal()">
+            ➕ Tambah Event
+          </button>
+          <button class="btn-success" onclick="exportData()">
+            📥 Export JSON
+          </button>
+          <button class="btn-warning" onclick="importData()">
+            📤 Import JSON
+          </button>
+          <button class="btn-secondary" onclick="undoLast()">↩️ Undo</button>
+        </div>
+
+        <div class="global-shift">
+          <label>Geser Semua Event:</label>
+          <button class="btn-warning" onclick="shiftAll(-1)">-1 Jam</button>
+          <input
+            type="number"
+            id="globalShiftHours"
+            value="2"
+            min="1"
+            max="100"
+          />
+          <button
+            class="btn-warning"
+            onclick="shiftAll(-parseInt(document.getElementById('globalShiftHours').value))"
+          >
+            - X Jam
+          </button>
+          <button
+            class="btn-success"
+            onclick="shiftAll(parseInt(document.getElementById('globalShiftHours').value))"
+          >
+            + X Jam
+          </button>
+          <button class="btn-success" onclick="shiftAll(1)">+1 Jam</button>
+        </div>
+      </header>
+
+      <!-- Timeline Bar -->
+      <div class="timeline-bar">
+        <h2>📊 Timeline Visual</h2>
+        <div class="timeline-bar-container" id="timelineBarContainer">
+          <div class="timeline-bar-scroll" id="timelineBarScroll">
+            <div class="timeline-today-marker"></div>
+          </div>
+        </div>
+        <div class="timeline-bar-legend">
+          <div class="timeline-bar-legend-item">
+            <div class="timeline-bar-legend-dot today"></div>
+            <span>Hari Ini</span>
+          </div>
+          <div class="timeline-bar-legend-item">
+            <div class="timeline-bar-legend-dot upcoming"></div>
+            <span>Akan Datang</span>
+          </div>
+          <div class="timeline-bar-legend-item">
+            <div class="timeline-bar-legend-dot past"></div>
+            <span>Sudah Lewat</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="timeline" class="timeline"></div>
+    </div>
+
+    <!-- Modal Tambah/Edit Event -->
+    <div id="eventModal" class="modal">
+      <div class="modal-content">
+        <h2 id="modalTitle">Tambah Event Baru</h2>
+        <form id="eventForm" onsubmit="saveEvent(event)">
+          <div class="form-group">
+            <label>Judul Event *</label>
+            <input type="text" id="eventTitle" required />
+          </div>
+          <div class="form-group">
+            <label>Tanggal & Waktu Target *</label>
+            <input type="datetime-local" id="eventDateTime" required />
+          </div>
+          <div class="form-group">
+            <label>Deskripsi (opsional)</label>
+            <textarea id="eventDescription"></textarea>
+          </div>
+          <div class="modal-buttons">
+            <button type="button" class="btn-secondary" onclick="closeModal()">
+              Batal
+            </button>
+            <button type="submit" class="btn-primary">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Input file tersembunyi untuk import -->
+    <input
+      type="file"
+      id="importFile"
+      accept=".json"
+      style="display: none"
+      onchange="handleImport(event)"
+    />
+
+    <script>
+      // Storage Key
+      const STORAGE_KEY = "timeline_events";
+      const UNDO_KEY = "timeline_undo";
+
+      // State
+      let events = [];
+      let editingIndex = -1;
+      let countdownInterval = null;
+      let notifiedEvents = new Set();
+
+      // Inisialisasi
+      function init() {
+        loadEvents();
+        renderTimeline();
+        startCountdown();
+        requestNotificationPermission();
+      }
+
+      // Request permission untuk notifikasi
+      function requestNotificationPermission() {
+        if ("Notification" in window && Notification.permission === "default") {
+          Notification.requestPermission();
+        }
+      }
+
+      // Load events dari localStorage
+      function loadEvents() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          try {
+            events = JSON.parse(stored);
+          } catch (e) {
+            console.error("Error loading events:", e);
+            events = [];
+          }
+        }
+      }
+
+      // Save events ke localStorage
+      function saveEvents() {
+        // Simpan state sebelumnya untuk undo
+        const currentState = localStorage.getItem(STORAGE_KEY);
+        if (currentState) {
+          localStorage.setItem(UNDO_KEY, currentState);
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+      }
+
+      // Render timeline
+      function renderTimeline() {
+        renderTimelineBar();
+        const timeline = document.getElementById("timeline");
+
+        if (events.length === 0) {
+          timeline.innerHTML = `
+                    <div class="empty-state">
+                        <h2>📅 Belum Ada Event</h2>
+                        <p>Klik "Tambah Event" untuk memulai!</p>
+                    </div>
+                `;
+          return;
+        }
+
+        // Sort events by date
+        const sortedEvents = [...events].sort(
+          (a, b) => new Date(a.targetDate) - new Date(b.targetDate)
+        );
+
+        timeline.innerHTML = sortedEvents
+          .map((event, idx) => {
+            const originalIndex = events.indexOf(event);
+            const isPast = new Date(event.targetDate) < new Date();
+            const countdown = calculateCountdown(event.targetDate);
+
+            return `
+                    <div class="event-card ${isPast ? "past" : ""}">
+                        <div class="event-header">
+                            <div class="event-title">${escapeHtml(
+                              event.title
+                            )}</div>
+                        </div>
+                        <div class="event-date">
+                            📅 ${formatDateTime(event.targetDate)}
+                        </div>
+                        <div class="countdown ${
+                          countdown.expired ? "expired" : ""
+                        }">
+                            ${countdown.text}
+                        </div>
+                        ${
+                          event.description
+                            ? `
+                            <div class="event-description">
+                                ${escapeHtml(event.description)}
+                            </div>
+                        `
+                            : ""
+                        }
+                        <div class="event-controls">
+                            <div class="shift-controls">
+                                <button class="btn-warning" onclick="shiftEvent(${originalIndex}, -1)">-1 Jam</button>
+                                <input type="number" id="shift-${originalIndex}" value="2" min="1" max="100" style="width: 60px;">
+                                <button class="btn-warning" onclick="shiftEvent(${originalIndex}, -parseInt(document.getElementById('shift-${originalIndex}').value))">- X</button>
+                                <button class="btn-success" onclick="shiftEvent(${originalIndex}, parseInt(document.getElementById('shift-${originalIndex}').value))">+ X</button>
+                                <button class="btn-success" onclick="shiftEvent(${originalIndex}, 1)">+1 Jam</button>
+                            </div>
+                            <button class="btn-primary" onclick="editEvent(${originalIndex})">✏️ Edit</button>
+                            <button class="btn-danger" onclick="deleteEvent(${originalIndex})">🗑️ Hapus</button>
+                        </div>
+                    </div>
+                `;
+          })
+          .join("");
+      }
+
+      // Render timeline bar
+      function renderTimelineBar() {
+        if (events.length === 0) {
+          document.getElementById("timelineBarScroll").innerHTML =
+            '<div class="timeline-today-marker"></div>';
+          return;
+        }
+
+        const now = new Date();
+        const todayStart = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate()
+        );
+
+        // Hitung range waktu: dari event terlama - 7 hari sampai event termuda + 7 hari
+        const eventDates = events.map((e) => new Date(e.targetDate));
+        const minDate = new Date(Math.min(...eventDates));
+        const maxDate = new Date(Math.max(...eventDates));
+
+        // Tambah padding 7 hari di kedua sisi
+        minDate.setDate(minDate.getDate() - 7);
+        maxDate.setDate(maxDate.getDate() + 7);
+
+        const totalDays = Math.ceil(
+          (maxDate - minDate) / (1000 * 60 * 60 * 24)
+        );
+        const pixelsPerDay = 80; // Lebar per hari dalam pixel
+        const totalWidth = Math.max(
+          totalDays * pixelsPerDay,
+          window.innerWidth
+        );
+
+        // Posisi hari ini
+        const daysSinceMin = Math.ceil(
+          (todayStart - minDate) / (1000 * 60 * 60 * 24)
+        );
+        const todayPosition = (daysSinceMin / totalDays) * 100;
+
+        // Buat HTML untuk markers
+        let markersHTML = `<div class="timeline-today-marker" style="left: ${todayPosition}%"></div>`;
+
+        events.forEach((event, idx) => {
+          const eventDate = new Date(event.targetDate);
+          const eventDateStart = new Date(
+            eventDate.getFullYear(),
+            eventDate.getMonth(),
+            eventDate.getDate()
+          );
+          const daysSinceMinEvent = Math.ceil(
+            (eventDateStart - minDate) / (1000 * 60 * 60 * 24)
+          );
+          const position = (daysSinceMinEvent / totalDays) * 100;
+
+          const isPast = eventDate < now;
+          const isToday = eventDateStart.getTime() === todayStart.getTime();
+
+          let markerClass = "timeline-event-marker";
+          if (isToday) markerClass += " today";
+          else if (isPast) markerClass += " past";
+
+          const countdown = calculateCountdown(event.targetDate);
+          const displayText = isToday ? "🎯" : isPast ? "✓" : "•";
+
+          markersHTML += `
+                    <div class="${markerClass}" 
+                         style="left: ${position}%"
+                         onclick="scrollToEvent(${idx})">
+                        ${displayText}
+                        <div class="timeline-event-tooltip">
+                            <strong>${escapeHtml(event.title)}</strong><br>
+                            ${formatDate(eventDate)}<br>
+                            ${
+                              countdown.expired
+                                ? "⏰ Sudah lewat"
+                                : countdown.text
+                            }
+                        </div>
+                    </div>
+                `;
+        });
+
+        const scrollContainer = document.getElementById("timelineBarScroll");
+        scrollContainer.style.width = totalWidth + "px";
+        scrollContainer.innerHTML = markersHTML;
+
+        // Auto-scroll ke hari ini
+        const container = document.getElementById("timelineBarContainer");
+        const scrollPosition =
+          (todayPosition / 100) * totalWidth - container.offsetWidth / 2;
+        container.scrollLeft = scrollPosition;
+      }
+
+      // Format date saja (tanpa waktu)
+      function formatDate(date) {
+        return date.toLocaleDateString("id-ID", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+      }
+
+      // Scroll ke event tertentu di timeline
+      function scrollToEvent(index) {
+        const sortedEvents = [...events].sort(
+          (a, b) => new Date(a.targetDate) - new Date(b.targetDate)
+        );
+        const eventCards = document.querySelectorAll(".event-card");
+        const targetEvent = sortedEvents[index];
+        const originalIndex = events.indexOf(targetEvent);
+
+        // Find the card dengan originalIndex yang sesuai
+        eventCards.forEach((card, idx) => {
+          if (sortedEvents[idx] === events[originalIndex]) {
+            card.scrollIntoView({ behavior: "smooth", block: "center" });
+            card.style.animation = "none";
+            setTimeout(() => {
+              card.style.animation = "highlight 1s ease";
+            }, 10);
+          }
+        });
+      }
+
+      // Hitung countdown
+      function calculateCountdown(targetDate) {
+        const now = new Date();
+        const target = new Date(targetDate);
+        const diff = target - now;
+
+        if (diff <= 0) {
+          // Hitung berapa lama sudah lewat
+          const elapsed = Math.abs(diff);
+          const days = Math.floor(elapsed / (1000 * 60 * 60 * 24));
+          const hours = Math.floor(
+            (elapsed % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+          );
+          const minutes = Math.floor(
+            (elapsed % (1000 * 60 * 60)) / (1000 * 60)
+          );
+          const seconds = Math.floor((elapsed % (1000 * 60)) / 1000);
+
+          return {
+            expired: true,
+            text: `+ ${days}h : ${pad(hours)}j : ${pad(minutes)}m : ${pad(
+              seconds
+            )}d lewat`,
+          };
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor(
+          (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+        );
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        return {
+          expired: false,
+          text: `${days}h : ${pad(hours)}j : ${pad(minutes)}m : ${pad(
+            seconds
+          )}d`,
+        };
+      }
+
+      // Pad angka dengan 0
+      function pad(num) {
+        return num.toString().padStart(2, "0");
+      }
+
+      // Format datetime
+      function formatDateTime(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleString("id-ID", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      // Escape HTML
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // Start countdown interval
+      function startCountdown() {
+        if (countdownInterval) clearInterval(countdownInterval);
+
+        countdownInterval = setInterval(() => {
+          renderTimeline();
+          checkNotifications();
+        }, 1000);
+      }
+
+      // Cek dan kirim notifikasi
+      function checkNotifications() {
+        if ("Notification" in window && Notification.permission === "granted") {
+          events.forEach((event, idx) => {
+            const eventKey = `${idx}-${event.targetDate}`;
+            if (!notifiedEvents.has(eventKey)) {
+              const diff = new Date(event.targetDate) - new Date();
+              if (diff <= 0 && diff > -5000) {
+                // Notif dalam 5 detik setelah waktu tiba
+                new Notification("⏰ Event Timeline", {
+                  body: `${event.title} - Waktunya telah tiba!`,
+                  icon: "⏰",
+                });
+                notifiedEvents.add(eventKey);
+              }
+            }
+          });
+        }
+      }
+
+      // Open modal tambah event
+      function openAddModal() {
+        editingIndex = -1;
+        document.getElementById("modalTitle").textContent = "Tambah Event Baru";
+        document.getElementById("eventForm").reset();
+
+        // Set default datetime ke besok jam 12 siang
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(12, 0, 0, 0);
+        document.getElementById("eventDateTime").value =
+          formatDateTimeLocal(tomorrow);
+
+        document.getElementById("eventModal").classList.add("active");
+      }
+
+      // Format datetime untuk input
+      function formatDateTimeLocal(date) {
+        const year = date.getFullYear();
+        const month = pad(date.getMonth() + 1);
+        const day = pad(date.getDate());
+        const hours = pad(date.getHours());
+        const minutes = pad(date.getMinutes());
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      }
+
+      // Close modal
+      function closeModal() {
+        document.getElementById("eventModal").classList.remove("active");
+      }
+
+      // Save event (tambah atau edit)
+      function saveEvent(e) {
+        e.preventDefault();
+
+        const event = {
+          title: document.getElementById("eventTitle").value,
+          targetDate: document.getElementById("eventDateTime").value,
+          description: document.getElementById("eventDescription").value,
+        };
+
+        if (editingIndex >= 0) {
+          events[editingIndex] = event;
+        } else {
+          events.push(event);
+        }
+
+        saveEvents();
+        renderTimeline();
+        closeModal();
+      }
+
+      // Edit event
+      function editEvent(index) {
+        editingIndex = index;
+        const event = events[index];
+
+        document.getElementById("modalTitle").textContent = "Edit Event";
+        document.getElementById("eventTitle").value = event.title;
+        document.getElementById("eventDateTime").value = event.targetDate;
+        document.getElementById("eventDescription").value =
+          event.description || "";
+
+        document.getElementById("eventModal").classList.add("active");
+      }
+
+      // Delete event
+      function deleteEvent(index) {
+        if (confirm("Yakin ingin menghapus event ini?")) {
+          events.splice(index, 1);
+          saveEvents();
+          renderTimeline();
+        }
+      }
+
+      // Shift single event
+      function shiftEvent(index, hours) {
+        const event = events[index];
+        const date = new Date(event.targetDate);
+        date.setHours(date.getHours() + hours);
+        event.targetDate = date.toISOString().slice(0, 16);
+
+        saveEvents();
+        renderTimeline();
+      }
+
+      // Shift all events
+      function shiftAll(hours) {
+        if (events.length === 0) {
+          alert("Belum ada event untuk digeser!");
+          return;
+        }
+
+        if (confirm(`Geser semua event ${hours > 0 ? "+" : ""}${hours} jam?`)) {
+          events.forEach((event) => {
+            const date = new Date(event.targetDate);
+            date.setHours(date.getHours() + hours);
+            event.targetDate = date.toISOString().slice(0, 16);
+          });
+
+          saveEvents();
+          renderTimeline();
+        }
+      }
+
+      // Export data
+      function exportData() {
+        const dataStr = JSON.stringify(events, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `timeline-backup-${new Date().getTime()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      // Import data
+      function importData() {
+        document.getElementById("importFile").click();
+      }
+
+      // Handle import
+      function handleImport(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          try {
+            const imported = JSON.parse(event.target.result);
+            if (Array.isArray(imported)) {
+              if (confirm("Import data ini? Data saat ini akan ditimpa.")) {
+                events = imported;
+                saveEvents();
+                renderTimeline();
+                alert("Import berhasil!");
+              }
+            } else {
+              alert("Format file tidak valid!");
+            }
+          } catch (e) {
+            alert("Error membaca file: " + e.message);
+          }
+        };
+        reader.readAsText(file);
+        e.target.value = "";
+      }
+
+      // Undo last action
+      function undoLast() {
+        const undoData = localStorage.getItem(UNDO_KEY);
+        if (undoData) {
+          if (confirm("Kembalikan ke state sebelumnya?")) {
+            localStorage.setItem(STORAGE_KEY, undoData);
+            loadEvents();
+            renderTimeline();
+          }
+        } else {
+          alert("Tidak ada aksi untuk di-undo!");
+        }
+      }
+
+      // Close modal saat klik di luar
+      document
+        .getElementById("eventModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) {
+            closeModal();
+          }
+        });
+
+      // Initialize app
+      init();
+    </script>
+  </body>
+</html>
